@@ -1,36 +1,48 @@
-# Load required packages
-library(caret)
-library(xgboost)
-library(dplyr)
+# Loading required libraries
+library(caret)     # For model training and evaluation
+library(xgboost)   # For XGBoost model
+library(dplyr)     # For data manipulation
 
-# Load preprocessed data
+# Load preprocessed training data
 load("processed_data.RData")
 
-# Define tuning grid
-xgb_grid <- expand.grid(nrounds = 1000,
-                        eta = c(0.001, 0.01, 0.1),
-                        gamma = c(0, 0.5, 1),
-                        max_depth = c(2, 4, 6, 8, 10))
-
-# Set up cross-validation
-trControl <- trainControl(method = "cv",
-                          number = 10,
-                          search = "grid",
-                          verboseIter = TRUE,
-                          returnResamp = "all",
-                          classProbs = TRUE,
-                          summaryFunction = twoClassSummary)
-
-# Prepare training data
-matTrain <- data.matrix(select(trainData, -outcome))
+# Set the seed for reproducibility
 set.seed(1234)
 
-# Train XGBoost model
-xgboost_train <- train(y = as.factor(trainData$outcome),
-                       x = matTrain,
-                       method = "xgbTree",
-                       trControl = trControl,
-                       tuneGrid = xgb_grid)
+# Define hyperparameter tuning grid for XGBoost model
+xgb_grid <- expand.grid(
+  nrounds = 1000,             # Number of boosting rounds
+  eta = c(0.001, 0.01, 0.1), # Learning rate
+  gamma = c(0, 0.5, 1),      # Regularization term
+  max_depth = c(2, 4, 6, 8, 10) # Maximum tree depth
+)
 
-# Save trained model
-save(xgboost_train, file = "xgboost_model.RData")
+# Set up cross-validation settings
+cv_control <- trainControl(
+  method = "cv",              # Cross-validation method
+  number = 10,                # Number of folds for cross-validation
+  search = "grid",            # Grid search for hyperparameter tuning
+  verboseIter = TRUE,         # Display training process information
+  returnResamp = "all",       # Return resampling results for each iteration
+  classProbs = TRUE,          # Enable calculation of class probabilities
+  summaryFunction = twoClassSummary # Use two-class summary metrics for classification problems
+)
+
+# Prepare training data by excluding the target variable ('outcome')
+train_matrix <- data.matrix(select(trainData, -outcome))
+
+# Train the XGBoost model using the specified parameters
+xgb_model <- train(
+  y = as.factor(trainData$outcome),  # Response variable (outcome)
+  x = train_matrix,                  # Predictor matrix
+  method = "xgbTree",                # Model type (XGBoost)
+  trControl = cv_control,            # Cross-validation settings
+  tuneGrid = xgb_grid                # Hyperparameter tuning grid
+)
+
+# Save the trained model for future use
+save(xgb_model, file = "xgboost_model.RData")
+
+# Optionally, display the best tuning parameters and performance
+print(xgb_model$bestTune)
+
