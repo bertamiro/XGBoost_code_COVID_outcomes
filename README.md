@@ -90,5 +90,5 @@ This project is licensed under the MIT License.
 ---
 
 ## Contact
-For questions or collaborations, contact [berta.miro@vhir.org].
+For questions or collaborations, contact [berta.miro@vhir.org] or contact [asanchez@ub.edu].
 
